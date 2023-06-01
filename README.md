@@ -1,2 +1,3 @@
-# mcsa-member-sync
-MCSA CT member sync between Membaz &amp; Everlytic.
+# MCSA Member Sync
+
+This is a tool to sync members from Membaz to Everlytic.
