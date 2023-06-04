@@ -19,3 +19,12 @@
 
 # Go workspace file
 go.work
+
+PrivateRules.mak
+
+everlytic-export*.csv
+membaz-export*.csv
+everlytic-missing*.csv
+membaz-missing*.csv
+
+screenshot*.png

@@ -23,34 +23,37 @@ func main() {
 	}
 	var username, password string
 	destination := filepath.Join(wd, fmt.Sprintf("membaz-export-%s.csv", time.Now().Format(format)))
+
 	fs := flag.NewFlagSet("member-sync", flag.ExitOnError)
 	fs.StringVar(&username, "username", "", "Membaz login username.")
 	fs.StringVar(&password, "password", "", "Membaz login password.")
-	fs.StringVar(&destination, "destination", destination, "Membaz login password.")
+	fs.StringVar(&destination, "destination", destination, "Membaz file destination.")
 	fs.Parse(os.Args[1:])
 
 	if username == "" {
-		log.Fatal("username is not set.")
+		log.Fatal("Membaz username is not set.")
 	}
 	if password == "" {
-		log.Fatal("password is not set.")
+		log.Fatal("Membaz password is not set.")
 	}
 	log.SetOutput(os.Stderr)
-	err = downloadCSV(username, password, destination)
+	err = exportMembazCSV(username, password, destination)
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Printf("Wrote Membaz export to %s.", destination)
 }
 
-func downloadCSV(username, password, destination string) error {
+func exportMembazCSV(username, password, destination string) error {
 	ctx, cancel := chromedp.NewContext(context.Background(),
 		chromedp.WithLogf(log.Printf),
+		chromedp.WithDebugf(log.Printf),
+		chromedp.WithErrorf(log.Printf),
 	)
 	defer cancel()
 
 	// create a timeout as a safety net to prevent any infinite wait loops
-	ctx, cancel = context.WithTimeout(ctx, 60*time.Second)
+	ctx, cancel = context.WithTimeout(ctx, 120*time.Second)
 	defer cancel()
 
 	// set up a channel, so we can block later while we monitor the download
@@ -79,16 +82,20 @@ func downloadCSV(username, password, destination string) error {
 	if err != nil {
 		return err
 	}
-
+	fmt.Println(username)
+	// to get a screenshot, add the following:
+	// var res []byte
+	// chromedp.CaptureScreenshot(&res),
+	// os.WriteFile("screenshot.png", res, 0644)
 	err = chromedp.Run(ctx,
 		chromedp.Navigate("https://www.membaz.com/login"),
 		chromedp.WaitReady("body"),
 		chromedp.SetValue(`lgnLogin_UserName`, username, chromedp.ByID),
 		chromedp.SetValue(`lgnLogin_Password`, password, chromedp.ByID),
 		chromedp.Click(`lgnLogin_LoginButton`, chromedp.ByID),
-		chromedp.Sleep(time.Second*2),
+		chromedp.Sleep(time.Second*5),
 		chromedp.Click(`a[title="View Reports"]`, chromedp.ByQuery),
-		chromedp.Sleep(time.Second*1),
+		chromedp.Sleep(time.Second*2),
 		chromedp.Click(`a[href="/App/User/CustomReports.aspx"]`, chromedp.ByQuery),
 		chromedp.Sleep(time.Second*2),
 		// configure headless browser downloads. note that
