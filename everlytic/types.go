@@ -1,23 +1,26 @@
-package main
+package everlytic
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
-type EverlyticResponse struct {
-	Links      []EverlyticLink       `json:"links"`
-	Collection []EverlyticCollection `json:"collection"`
+type ListResponse struct {
+	Links      []Link                   `json:"links"`
+	Collection []SubscriptionCollection `json:"collection"`
 }
 
-type EverlyticLink struct {
+type Link struct {
 	Title string `json:"title"`
 	Rel   string `json:"rel"`
 	Href  string `json:"href"`
 }
 
-type EverlyticCollection struct {
-	Data EverlyticSubscription `json:"data"`
+type SubscriptionCollection struct {
+	Data Subscription `json:"data"`
 }
 
-type EverlyticSubscription struct {
+type Subscription struct {
 	ListID                  int         `json:"list_id"`
 	ContactID               int         `json:"contact_id"`
 	DateCreate              int         `json:"date_create"`
@@ -32,12 +35,12 @@ type EverlyticSubscription struct {
 	ContactUniqueID         string      `json:"contact_unique_id"`
 }
 
-type EverlyticContactResponse struct {
-	Links []EverlyticLink  `json:"links"`
-	Item  EverlyticContact `json:"item"`
+type ContactResponse struct {
+	Links []Link  `json:"links"`
+	Item  Contact `json:"item"`
 }
 
-type EverlyticContact struct {
+type Contact struct {
 	ID                               int     `json:"id"`
 	CountryID                        int     `json:"country_id"`
 	CityID                           int     `json:"city_id"`
@@ -101,13 +104,41 @@ type EverlyticContact struct {
 	EducationLevel                   string  `json:"education_level"`
 	Hash                             string  `json:"hash"`
 	UniqueID                         string  `json:"unique_id"`
+	ListID                           int
 }
 
-func (c EverlyticContact) Record() []string {
+func (c Contact) EmailAddress() string {
+	return c.Email
+}
+
+func (c Contact) Record() []string {
 	return []string{
 		strconv.Itoa(c.ID),
 		c.Email,
 		c.Name,
 		c.Lastname,
+		strconv.Itoa(c.ListID),
 	}
+}
+
+func (c Contact) IsEmpty() bool {
+	return !strings.EqualFold(c.Email, "email") && !strings.EqualFold(c.Email, "")
+}
+
+func LoadContact(record []string) (Contact, error) {
+	cid, err := strconv.Atoi(record[0])
+	if err != nil {
+		return Contact{}, err
+	}
+	lid, err := strconv.Atoi(record[4])
+	if err != nil {
+		return Contact{}, err
+	}
+	return Contact{
+		ID:       cid,
+		Email:    record[1],
+		Name:     record[2],
+		Lastname: record[3],
+		ListID:   lid,
+	}, nil
 }

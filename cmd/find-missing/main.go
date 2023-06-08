@@ -1,15 +1,18 @@
 package main
 
 import (
-	"encoding/csv"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/godfried/mcsa-member-sync/csv"
+	"github.com/godfried/mcsa-member-sync/everlytic"
+	"github.com/godfried/mcsa-member-sync/membaz"
+	"github.com/godfried/mcsa-member-sync/types"
 )
 
 const format = "2006-01-02_15-04-05"
@@ -30,114 +33,38 @@ func main() {
 	fs.StringVar(&everlyticCSV, "everlytic-csv", everlyticCSV, "Everlytic CSV source.")
 	fs.Parse(os.Args[1:])
 
-	membazContacts, err := loadMembaz(membazCSV)
+	membazContacts, err := csv.ReadContacts(membazCSV, membaz.LoadContact)
 	if err != nil {
 		log.Fatal(err)
 	}
-	everlyticContacts, err := loadEverlytic(everlyticCSV)
+	everlyticContacts, err := csv.ReadContacts(everlyticCSV, everlytic.LoadContact)
 	if err != nil {
 		log.Fatal(err)
 	}
-	missingMembaz := findMissing(membazContacts, everlyticContacts)
-	missingEverlytic := findMissing(everlyticContacts, membazContacts)
-	err = writeContacts(missingEverlytic, destinationEverlytic)
+	missingMembaz := findMissing(membazContacts, everlyticContacts, make([]everlytic.Contact, 0, len(everlyticContacts)))
+	missingEverlytic := findMissing(everlyticContacts, membazContacts, make([]membaz.Contact, 0, len(membazContacts)))
+	err = csv.WriteContacts(missingEverlytic, destinationEverlytic)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = writeContacts(missingMembaz, destinationMembaz)
+	err = csv.WriteContacts(missingMembaz, destinationMembaz)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func writeContacts(contacts []contact, dest string) error {
-	f, err := os.Create(dest)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	cr := csv.NewWriter(f)
-	for _, contact := range contacts {
-		err = cr.Write(contact.record())
-		if err != nil {
-			return err
-		}
-	}
-	cr.Flush()
-	return nil
-}
-
-func findMissing(oracle, check []contact) []contact {
-	missing := make([]contact, 0, len(check))
+func findMissing[O types.Contact, C types.Contact](oracle []O, check, result []C) []C {
 	for _, checking := range check {
 		found := false
 		for _, contact := range oracle {
-			if strings.EqualFold(checking.email, contact.email) {
+			if strings.EqualFold(checking.EmailAddress(), contact.EmailAddress()) {
 				found = true
 				break
 			}
 		}
 		if !found {
-			missing = append(missing, checking)
+			result = append(result, checking)
 		}
 	}
-	return missing
-}
-
-type contact struct {
-	email       string
-	first, last string
-}
-
-func (c contact) record() []string {
-	return []string{
-		c.email,
-		c.first,
-		c.last,
-	}
-}
-
-func loadEverlytic(source string) ([]contact, error) {
-	return loadCSV(source, func(record []string) contact {
-		return contact{
-			email: record[1],
-			first: record[2],
-			last:  record[3],
-		}
-	})
-}
-
-func loadMembaz(source string) ([]contact, error) {
-	return loadCSV(source, func(record []string) contact {
-		return contact{
-			first: record[0],
-			last:  record[1],
-			email: record[2],
-		}
-	})
-
-}
-
-func loadCSV(source string, loadFunc func(record []string) contact) ([]contact, error) {
-	f, err := os.Open(source)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	cr := csv.NewReader(f)
-	contacts := make([]contact, 0, 4096)
-	for {
-		record, err := cr.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-		contact := loadFunc(record)
-		if !strings.EqualFold(contact.email, "email") && !strings.EqualFold(contact.email, "") {
-			contacts = append(contacts, contact)
-		}
-	}
-	return contacts, nil
+	return result
 }

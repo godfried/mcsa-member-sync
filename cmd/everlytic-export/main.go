@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"encoding/csv"
+
+	"github.com/godfried/mcsa-member-sync/everlytic"
 )
 
 const format = "2006-01-02_15-04-05"
@@ -34,10 +36,7 @@ func main() {
 		log.Fatal("Everlytic API Key is not set.")
 	}
 	log.SetOutput(os.Stderr)
-	ec := EverlyticClient{
-		username: username,
-		apiKey:   apiKey,
-	}
+	ec := everlytic.NewClient(username, apiKey)
 	contacts, err := ec.DownloadEverlyticCSV()
 	if err != nil {
 		log.Fatal(err)
@@ -49,7 +48,7 @@ func main() {
 	log.Printf("Wrote Everlytic export to %s.", destination)
 }
 
-func writeEverlyticCSV(contacts []EverlyticContact, csvOutput string) error {
+func writeEverlyticCSV(contacts []everlytic.Contact, csvOutput string) error {
 	f, err := os.Create(csvOutput)
 	if err != nil {
 		return err

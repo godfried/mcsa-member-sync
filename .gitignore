@@ -28,3 +28,7 @@ everlytic-missing*.csv
 membaz-missing*.csv
 
 screenshot*.png
+
+bin
+
+.vscode
