@@ -5,7 +5,13 @@ go 1.20
 require github.com/gocolly/colly v1.2.0
 
 require (
+	github.com/alecthomas/repr v0.2.0 // indirect
+	github.com/hexops/gotextdiff v1.0.3 // indirect
+)
+
+require (
 	github.com/PuerkitoBio/goquery v1.5.1 // indirect
+	github.com/alecthomas/assert/v2 v2.3.0
 	github.com/andybalholm/cascadia v1.2.0 // indirect
 	github.com/antchfx/htmlquery v1.2.3 // indirect
 	github.com/antchfx/xmlquery v1.2.4 // indirect

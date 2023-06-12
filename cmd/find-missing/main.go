@@ -33,27 +33,34 @@ func main() {
 	fs.StringVar(&everlyticCSV, "everlytic-csv", everlyticCSV, "Everlytic CSV source.")
 	fs.Parse(os.Args[1:])
 
-	membazContacts, err := csv.ReadContacts(membazCSV, membaz.LoadContact)
-	if err != nil {
-		log.Fatal(err)
-	}
-	everlyticContacts, err := csv.ReadContacts(everlyticCSV, everlytic.LoadContact)
-	if err != nil {
-		log.Fatal(err)
-	}
-	missingMembaz := findMissing(membazContacts, everlyticContacts, make([]everlytic.Contact, 0, len(everlyticContacts)))
-	missingEverlytic := findMissing(everlyticContacts, membazContacts, make([]membaz.Contact, 0, len(membazContacts)))
-	err = csv.WriteContacts(missingEverlytic, destinationEverlytic)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = csv.WriteContacts(missingMembaz, destinationMembaz)
+	err = run(membazCSV, everlyticCSV, destinationMembaz, destinationEverlytic)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func findMissing[O types.Contact, C types.Contact](oracle []O, check, result []C) []C {
+func run(sourceMembaz, sourceEverlytic, destinationMembaz, destinationEverlytic string) (err error) {
+	membazContacts, err := csv.ReadContacts(sourceMembaz, membaz.LoadContact)
+	if err != nil {
+		return err
+	}
+	everlyticContacts, err := csv.ReadContacts(sourceEverlytic, everlytic.LoadContact)
+	if err != nil {
+		return err
+	}
+	missingMembaz := findMissing(membazContacts, everlyticContacts)
+	missingEverlytic := findMissing(everlyticContacts, membazContacts)
+
+	err = csv.WriteContacts(missingMembaz, destinationMembaz)
+	if err != nil {
+		return err
+	}
+	err = csv.WriteContacts(missingEverlytic, destinationEverlytic)
+	return err
+}
+
+func findMissing[O types.Contact, C types.Contact](oracle []O, check []C) []types.Contact {
+	result := make([]types.Contact, 0, len(check))
 	for _, checking := range check {
 		found := false
 		for _, contact := range oracle {

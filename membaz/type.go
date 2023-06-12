@@ -27,7 +27,7 @@ func (c Contact) EmailAddress() string {
 }
 
 func (c Contact) IsEmpty() bool {
-	return !strings.EqualFold(c.Email, "email") && !strings.EqualFold(c.Email, "")
+	return strings.EqualFold(c.Email, "email") || strings.EqualFold(c.Email, "")
 }
 
 func LoadContact(record []string) (Contact, error) {

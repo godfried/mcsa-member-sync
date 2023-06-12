@@ -8,7 +8,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"strconv"
 )
 
 const (
@@ -44,42 +43,52 @@ func (ec Client) DownloadEverlyticCSV() (contacts []Contact, err error) {
 	}
 }
 
-func (ec Client) UnsubscribeAll(listID int, contacts []Contact) error {
+func (ec Client) UnsubscribeAll(contacts []Contact) error {
 	type contact struct {
 		ListID      int    `json:"list_id"`
 		ContactID   int    `json:"contact_id"`
 		EmailStatus string `json:"email_status"`
 	}
-	unsubscriptions := make(map[string]contact, len(contacts))
+	//unsubscriptions := make(map[string]contact, len(contacts))
 	for _, c := range contacts {
-		unsubscriptions[strconv.Itoa(c.ID)] = contact{
+		//unsubscriptions[strconv.Itoa(c.ID)] = contact{
+		unsub := contact{
 			ContactID:   c.ID,
 			ListID:      c.ListID,
 			EmailStatus: "unsubscribed",
 		}
+		//}
+		body := new(bytes.Buffer)
+		err := json.NewEncoder(body).Encode(unsub)
+		if err != nil {
+			return err
+		}
+		url := fmt.Sprintf("%s/list_subscriptions/%d", baseURL, MCSAMembersList)
+		var result json.RawMessage
+		headers := map[string]string{
+			"Content-Type": "application/json",
+		}
+		err = ec.makeRequest(http.MethodPost, url, body, &result, headers)
+		if err != nil {
+			return err
+		}
 	}
-	body := new(bytes.Buffer)
-	err := json.NewEncoder(body).Encode(unsubscriptions)
-	if err != nil {
-		return err
-	}
-	url := fmt.Sprintf("%s/list_subscriptions/%d/bulk", baseURL, MCSAMembersList)
-	var result json.RawMessage
-	err = ec.makeRequest(http.MethodPost, url, body, &result)
-	log.Printf("RESULT: %s\n", result)
 	return nil
 }
 
-func (ec Client) makeGetRequest(url string, result interface{}) error {
-	return ec.makeRequest(http.MethodGet, url, nil, result)
+func (ec Client) makeGetRequest(url string, result interface{}, headers map[string]string) error {
+	return ec.makeRequest(http.MethodGet, url, nil, result, headers)
 }
 
-func (ec Client) makeRequest(method, url string, body io.Reader, result interface{}) error {
+func (ec Client) makeRequest(method, url string, body io.Reader, result interface{}, headers map[string]string) error {
 	req, err := http.NewRequest(http.MethodGet, url, body)
 	if err != nil {
 		return err
 	}
 	req.Header.Add("Authorization", "Basic "+basicAuth(ec.username, ec.apiKey))
+	for k, v := range headers {
+		req.Header.Add(k, v)
+	}
 	resp, err := ec.Do(req)
 	if err != nil {
 		return err
@@ -99,7 +108,7 @@ func (ec Client) makeRequest(method, url string, body io.Reader, result interfac
 
 func (ec Client) downloadEverlyticCSV(url string) (contacts []Contact, next string, err error) {
 	var everlyticResponse ListResponse
-	err = ec.makeGetRequest(url, &everlyticResponse)
+	err = ec.makeGetRequest(url, &everlyticResponse, nil)
 	if err != nil {
 		return nil, "", err
 	}
@@ -123,7 +132,7 @@ func (ec Client) downloadEverlyticCSV(url string) (contacts []Contact, next stri
 func (ec Client) loadContact(contactID int) (Contact, error) {
 	var resp ContactResponse
 	url := fmt.Sprintf("%s/contacts/%d", baseURL, contactID)
-	err := ec.makeGetRequest(url, &resp)
+	err := ec.makeGetRequest(url, &resp, nil)
 	return resp.Item, err
 }
 

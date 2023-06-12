@@ -35,7 +35,7 @@ func main() {
 	contacts, err := csv.ReadContacts(source, everlytic.LoadContact)
 	ec := everlytic.NewClient(username, apiKey)
 	_ = ec
-	err = ec.UnsubscribeAll(contacts[0].ListID, contacts)
+	err = ec.UnsubscribeAll(contacts)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -12,30 +12,43 @@ MEMBAZ_USERNAME ?= NOT_SET
 build: ## Build executables
 	mkdir -p bin
 	go build -v -o ./bin ./...
+.PHONY: build
 
 clean: ## Remove build artefacts
 	rm -rf bin
+.PHONY: clean
 
 run: membaz-export everlytic-export find-missing ## Run full chain to add missing members to Everlytic & remove them from Membaz.
+.PHONY: run
 
 membaz-export: build ## Export members from Membaz
 	bin/membaz-export -password "$(MEMBAZ_PASSWORD)"\
                   -username "$(MEMBAZ_USERNAME)"\
                   -destination $(MEMBAZ_EXPORT)
+.PHONY: membaz-export
 
 everlytic-export: build ## Export members from Everlytic
 	bin/everlytic-export -api-key "$(EVERLYTIC_API_KEY)"\
                      -username "$(EVERLYTIC_USERNAME)"\
                      -destination $(EVERLYTIC_EXPORT)
+.PHONY: everlytic-export
 
 find-missing: build ## Find missing members in Membaz & Everlytic
 	bin/find-missing -membaz-destination $(MEMBAZ_MISSING)\
                  -everlytic-destination $(EVERLYTIC_MISSING)\
                  -membaz-csv $(MEMBAZ_EXPORT)\
                  -everlytic-csv $(EVERLYTIC_EXPORT)
+.PHONY: find-missing
+
+everlytic-unsubscribe: build ## Unsubscribe members who are not present in Membaz
+	bin/everlytic-unsubscribe -source $(MEMBAZ_MISSING)\
+                              -api-key "$(EVERLYTIC_API_KEY)"\
+                              -username "$(EVERLYTIC_USERNAME)"
+.PHONY: everlytic-unsubscribe
 
 test: ## Execute tests
 	go test -v ./...
+.PHONY: test
 
 help:  ## Show this help.
 	@echo "make targets:"
