@@ -29,10 +29,10 @@ func main() {
 	fs.StringVar(&destination, "destination", destination, "Everlytic file destination.")
 	fs.Parse(os.Args[1:])
 
-	if username == "" {
+	if username == "" || username == "NOT_SET" {
 		log.Fatal("Everlytic username is not set.")
 	}
-	if apiKey == "" {
+	if apiKey == "" || apiKey == "NOT_SET" {
 		log.Fatal("Everlytic API Key is not set.")
 	}
 	log.SetOutput(os.Stderr)

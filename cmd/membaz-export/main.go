@@ -30,10 +30,10 @@ func main() {
 	fs.StringVar(&destination, "destination", destination, "Membaz file destination.")
 	fs.Parse(os.Args[1:])
 
-	if username == "" {
+	if username == "" || username == "NOT_SET" {
 		log.Fatal("Membaz username is not set.")
 	}
-	if password == "" {
+	if password == "" || password == "NOT_SET" {
 		log.Fatal("Membaz password is not set.")
 	}
 	log.SetOutput(os.Stderr)
@@ -88,6 +88,7 @@ func exportMembazCSV(username, password, destination string) error {
 	// chromedp.CaptureScreenshot(&res),
 	// os.WriteFile("screenshot.png", res, 0644)
 	err = chromedp.Run(ctx,
+		chromedp.EmulateViewport(1280, 768),
 		chromedp.Navigate("https://www.membaz.com/login"),
 		chromedp.WaitReady("body"),
 		chromedp.SetValue(`lgnLogin_UserName`, username, chromedp.ByID),

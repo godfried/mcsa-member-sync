@@ -21,6 +21,11 @@ clean: ## Remove build artefacts
 run: membaz-export everlytic-export find-missing ## Run full chain to add missing members to Everlytic & remove them from Membaz.
 .PHONY: run
 
+run-github: run
+	if [ ! -s $(MEMBAZ_MISSING) ] ; then rm $(MEMBAZ_MISSING); fi
+	if [ ! -s $(EVERLYTIC_MISSING) ] ; then rm $(EVERLYTIC_MISSING); fi
+.PHONY: run-github
+
 membaz-export: build ## Export members from Membaz
 	bin/membaz-export -password "$(MEMBAZ_PASSWORD)"\
                   -username "$(MEMBAZ_USERNAME)"\

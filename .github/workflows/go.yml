@@ -1,16 +1,16 @@
-# This workflow will build a golang project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
-
-name: Go
+name: Sync Members
 
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    - cron:  '0 0 * * 0'
+
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
@@ -26,3 +26,75 @@ jobs:
 
     - name: Test
       run: make test
+
+  run:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Export secrets
+      uses: oNaiPs/secrets-to-env-action@v1
+      with:
+        secrets: ${{ toJSON(secrets) }}
+
+    - name: Run
+      run: make run-github
+
+    - name: "Check Membaz file existence"
+      id: check_files_membaz
+      uses: andstor/file-existence-action@v2
+      with:
+        files: membaz-missing.csv
+
+    - name: "Check Everlytic file existence"
+      id: check_files_everlytic
+      uses: andstor/file-existence-action@v2
+      with:
+        files: everlytic-missing.csv
+
+    - name: Upload Membaz artifacts
+      if: steps.check_files_membaz.outputs.files_exists == 'true'
+      uses: actions/upload-artifact@v3
+      with:
+        name: membaz-missing
+        path: membaz-missing.csv
+
+    - name: Upload Everlytic artifacts
+      id: upload_everlytic
+      if: steps.check_files_everlytic.outputs.files_exists == 'true'
+      uses: actions/upload-artifact@v3
+      with:
+        name: everlytic-missing
+        path: everlytic-missing.csv
+
+    - name: Send Membaz mail
+      if: steps.check_files_membaz.outputs.files_exists == 'true'
+      uses: dawidd6/action-send-mail@v3.7.2
+      with:
+        server_address: smtp.gmail.com
+        server_port: 465
+        secure: true
+        username: ${{secrets.MAIL_USERNAME}}
+        password: ${{secrets.MAIL_PASSWORD}}
+        subject: "[Github Actions][${{github.repository}}] Unsynced Members"
+        to: mcsa@jordaan.me
+        from: Github
+        body: Members present on Everlytic, but missing in Membaz
+        attachments: membaz-missing.csv
+
+    - name: Send Everlytic mail
+      if: steps.check_files_everlytic.outputs.files_exists == 'true'
+      uses: dawidd6/action-send-mail@v3.7.2
+      with:
+        server_address: smtp.gmail.com
+        server_port: 465
+        secure: true
+        username: ${{secrets.MAIL_USERNAME}}
+        password: ${{secrets.MAIL_PASSWORD}}
+        subject: "[Github Actions][${{github.repository}}] Unsynced Members"
+        to: mcsa@jordaan.me
+        from: Github
+        body: Members present on Membaz, but missing in Everlytic
+        attachments: everlytic-missing.csv
+
