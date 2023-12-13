@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/godfried/mcsa-member-sync/contacts/everlytic"
 	"github.com/godfried/mcsa-member-sync/csv"
-	"github.com/godfried/mcsa-member-sync/everlytic"
 )
 
 const format = "2006-01-02_15-04-05"

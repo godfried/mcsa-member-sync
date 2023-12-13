@@ -5,10 +5,10 @@ import (
 	"io"
 	"os"
 
-	"github.com/godfried/mcsa-member-sync/types"
+	"github.com/godfried/mcsa-member-sync/contacts"
 )
 
-func ReadContacts[T types.Contact](source string, loadContact func(record []string) (T, error)) ([]T, error) {
+func ReadContacts[T contacts.Contact](source string, loadContact func(record []string) (T, error)) ([]T, error) {
 	f, err := os.Open(source)
 	if err != nil {
 		return nil, err

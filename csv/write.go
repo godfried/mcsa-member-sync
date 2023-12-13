@@ -4,10 +4,10 @@ import (
 	"encoding/csv"
 	"os"
 
-	"github.com/godfried/mcsa-member-sync/types"
+	"github.com/godfried/mcsa-member-sync/contacts"
 )
 
-func WriteContacts[T types.Contact](contacts []T, dest string) error {
+func WriteContacts[T contacts.Contact](contacts []T, dest string) error {
 	f, err := os.Create(dest)
 	if err != nil {
 		return err

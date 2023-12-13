@@ -10,7 +10,7 @@ import (
 
 	"encoding/csv"
 
-	"github.com/godfried/mcsa-member-sync/everlytic"
+	"github.com/godfried/mcsa-member-sync/contacts/everlytic"
 )
 
 const format = "2006-01-02_15-04-05"
