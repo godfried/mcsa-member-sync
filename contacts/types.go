@@ -1,6 +1,9 @@
 package contacts
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 type Contact interface {
 	IsEmpty() bool
@@ -20,4 +23,11 @@ func (s StringContact) EmailAddress() string {
 
 func (s StringContact) Record() []string {
 	return []string{s.EmailAddress()}
+}
+
+func LoadString(record []string) (StringContact, error) {
+	if len(record) != 1 {
+		return "", fmt.Errorf("Unexpected record length %d, expected one element. Record: %v", len(record), record)
+	}
+	return StringContact(record[0]), nil
 }
